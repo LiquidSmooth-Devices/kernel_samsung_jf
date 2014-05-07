@@ -244,8 +244,13 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
+ifdef CONFIG_CC_OPTIMIZE_ALOT
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -ftree-vectorize -fomit-frame-pointer
+HOSTCXXFLAGS = -O3 -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -mcpu=cortex-a15 -mtune=cortex-a15 -marm -mfpu=neon-vfpv4 -ftree-vectorize -mvectorize-with-neon-quad
+else
 HOSTCFLAGS   = -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -fgcse-las
 HOSTCXXFLAGS = -O3 -fgcse-las
+endif
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -346,28 +351,90 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
+
+CUSTOM_FLAG	= -fgcse-sm -fsched-spec-load \
+		  -fforce-addr -fsingle-precision-constant \
+		  -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -ftree-vectorize  \
+		  -mvectorize-with-neon-quad -pipe -marm \
+		  -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block \
+		  -fno-default-inline -fno-inline-functions-called-once -ffast-math
+
+ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+CUSTOM_FLAG	+= -Os
+endif
+ifdef CONFIG_CC_OPTIMIZE_DEFAULT
+CUSTOM_FLAG	+= -O2
+endif
+ifdef CONFIG_CC_OPTIMIZE_ALOT
+MODFLAGS	= -DMODULE \
+		  -O2 \
+		  -fgcse-lm \
+		  -fgcse-sm \
+		  -fsched-spec-load \
+		  -fforce-addr \
+		  -fsingle-precision-constant \
+		  -mcpu=cortex-a15 \
+		  -mtune=cortex-a15 \
+		  -fno-pic \
+		  -marm \
+		  -mfpu=neon-vfpv4 \
+		  -ftree-vectorize \
+		  -mvectorize-with-neon-quad
+else
 MODFLAGS        = -DMODULE \
                   -mfpu=neon-vfpv4 \
                   -mtune=cortex-a15 \
 		  -fgcse-las \
 		  -fpredictive-commoning \
                   -O3
+endif
 
 CFLAGS_MODULE   = $(MODFLAGS)
 AFLAGS_MODULE   = $(MODFLAGS)
 LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds
+ifdef CONFIG_CC_OPTIMIZE_ALOT
+CFLAGS_KERNEL	= -O3 \
+		  -fgcse-lm \
+		  -fgcse-sm \
+		  -fsched-spec-load \
+		  -fforce-addr \
+		  -ffast-math \
+		  -fsingle-precision-constant \
+		  -mtune=cortex-a15 \
+		  -marm \
+		  -mfpu=neon-vfpv4 \
+		  -funswitch-loops \
+		  -mvectorize-with-neon-quad
+AFLAGS_KERNEL	= -O3 \
+		  -fgcse-lm \
+		  -fgcse-sm \
+		  -fsched-spec-load \
+		  -fforce-addr \
+		  -ffast-math \
+		  -fsingle-precision-constant \
+		  -mtune=cortex-a15 \
+		  -marm \
+		  -mfpu=neon-vfpv4 \
+		  -funswitch-loops \
+		  -mvectorize-with-neon-quad
+else
 CFLAGS_KERNEL   = -mfpu=neon-vfpv4 \
                   -mtune=cortex-a15 \
 		  -fgcse-las \
 		  -fpredictive-commoning \
                   -O2
-
 ifeq ($(ENABLE_GRAPHITE),true)
-CFLAGS_KERNEL	+= -fgraphite -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block
+CFLAGS_KERNEL	+= -fgraphite \
+		   -floop-parallelize-all \
+		   -ftree-loop-linear \
+		   -floop-interchange \
+		   -floop-strip-mine \
+		   -floop-block
 endif
 AFLAGS_KERNEL	=
-CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
-
+CFLAGS_GCOV	= -fprofile-arcs \
+		  -ftest-coverage
+endif
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
@@ -376,24 +443,81 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
                    $(if $(KBUILD_SRC), -I$(srctree)/include) \
                    -include $(srctree)/include/linux/kconfig.h
 
+ifdef CONFIG_CC_OPTIMIZE_ALOT
+KBUILD_CPPFLAGS := -D__KERNEL__ \
+		   -O3 \
+		   -fgcse-lm \
+		   -fgcse-sm \
+		   -fsched-spec-load \
+		   -fforce-addr \
+		   -fsingle-precision-constant \
+		   -mcpu=cortex-a15 \
+		   -mtune=cortex-a15 \
+		   -marm \
+		   -mfpu=neon-vfpv4 \
+		   -ftree-vectorize \
+		   -mvectorize-with-neon-quad
+else
 KBUILD_CPPFLAGS := -D__KERNEL__
+endif
 
-CFLAGS_A15 = -mtune=cortex-a15 -mfpu=neon -funsafe-math-optimizations
-CFLAGS_MODULO = -fmodulo-sched -fmodulo-sched-allow-regmoves
+CFLAGS_A15 = -mtune=cortex-a15 \
+	     -mfpu=neon \
+	     -funsafe-math-optimizations
+CFLAGS_MODULO = -fmodulo-sched \
+		-fmodulo-sched-allow-regmoves
 KERNEL_MODS        = $(CFLAGS_A15) $(CFLAGS_MODULO)
  
 KBUILD_CFLAGS   := -O3 -funswitch-loops \
  		           -Wundef -Wstrict-prototypes -Wno-trigraphs \
- 		           -fno-strict-aliasing -fno-common \
+ 		           -fno-strict-aliasing -fno-common -Wno-sizeof-pointer-memaccess \
  		           -Werror-implicit-function-declaration \
- 		           -Wno-format-security \
- 		           -fno-delete-null-pointer-checks
- 		           
+ 		           -Wno-format-security -Wno-unused-function -Wno-array-bounds -Wno-uninitialized \
+ 		           -fno-delete-null-pointer-checks -Wno-unused-variable -Wno-maybe-uninitialized -Wno-cpp -Wno-declaration-after-statement
+ifdef CONFIG_CC_OPTIMIZE_ALOT
+KBUILD_AFLAGS_KERNEL := -O3 \
+			-fgcse-lm \
+			-fgcse-sm \
+			-fsched-spec-load \
+			-fforce-addr \
+			-fsingle-precision-constant \
+			-mcpu=cortex-a15 \
+			-mtune=cortex-a15 \
+			-marm \
+			-mfpu=neon-vfpv4 \
+			-ftree-vectorize \
+			-mvectorize-with-neon-quad
+KBUILD_CFLAGS_KERNEL := -O3 \
+			-fgcse-lm \
+			-fgcse-sm \
+			-fsched-spec-load \
+			-fforce-addr \
+			-fsingle-precision-constant \
+			-mcpu=cortex-a15 \
+			-mtune=cortex-a15 \
+			-marm \
+			-mfpu=neon-vfpv4 \
+			-ftree-vectorize \
+			-mvectorize-with-neon-quad
+else		           
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
+endif
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE
-KBUILD_CFLAGS_MODULE  := -DMODULE
+KBUILD_CFLAGS_MODULE  := -DMODULE \
+			 -fgcse-lm \
+			 -fgcse-sm \
+			 -fsched-spec-load \
+			 -fforce-addr \
+			 -ffast-math \
+			 -fsingle-precision-constant \
+			 -mcpu=cortex-a15 \
+			 -mtune=cortex-a15 \
+			 -mfpu=neon-vfpv4 \
+			 -ftree-vectorize \
+			 -funswitch-loops \
+			 -Wno-cpp
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
@@ -578,12 +702,21 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
-ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
-else
+ifdef CONFIG_CC_OPTIMIZE_DEFAULT
 KBUILD_CFLAGS	+= -O3
+ifdef CONFIG_CC_OPTIMIZE_ALOT
+KBUILD_CFLAGS	+= -O3
+endif
+ifdef CONFIG_CC_OPTIMIZE_FAST
+KBUILD_CFLAGS	+= -Ofast
+endif
 ifeq ($(ENABLE_GRAPHITE),true)
-KBUILD_CFLAGS	+= -fgraphite -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block
+KBUILD_CFLAGS	+= -fgraphite \
+		   -floop-parallelize-all \
+		   -ftree-loop-linear \
+		   -floop-interchange \
+		   -floop-strip-mine \
+		   -floop-block
 endif
 endif
 
