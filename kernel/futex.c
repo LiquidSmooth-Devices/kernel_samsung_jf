@@ -731,7 +731,6 @@ lookup_pi_state(u32 uval, struct futex_hash_bucket *hb,
   			 */
   			if (task && pi_state->owner == task)
   				return -EDEADLK;
-
 		out_state:
 			atomic_inc(&pi_state->refcount);
 			*ps = pi_state;
@@ -1500,8 +1499,7 @@ retry_private:
 			 * rereading and handing potential crap to
 			 * lookup_pi_state.
 			 */
-			ret = lookup_pi_state(ret, hb2, &key2, &pi_state, NULL);
-		}
+			ret = lookup_pi_state(ret, hb2, &key2, &pi_state, NULL);		}
 
 		switch (ret) {
 		case 0:
