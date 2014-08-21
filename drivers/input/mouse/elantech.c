@@ -997,13 +997,13 @@ static int elantech_get_resolution_v4(struct psmouse *psmouse,
  */
 static void elantech_set_buttonpad_prop(struct psmouse *psmouse)
 {
-        struct input_dev *dev = psmouse->dev;
-        struct elantech_data *etd = psmouse->private;
+	struct input_dev *dev = psmouse->dev;
+	struct elantech_data *etd = psmouse->private;
 
-        if (etd->fw_version & 0x001000) {
-                __set_bit(INPUT_PROP_BUTTONPAD, dev->propbit);
-                __clear_bit(BTN_RIGHT, dev->keybit);
-        }
+	if (etd->fw_version & 0x001000) {
+		__set_bit(INPUT_PROP_BUTTONPAD, dev->propbit);
+		__clear_bit(BTN_RIGHT, dev->keybit);
+	}
 }
 
 /*
@@ -1049,8 +1049,8 @@ static int elantech_set_input_params(struct psmouse *psmouse)
 		__set_bit(INPUT_PROP_SEMI_MT, dev->propbit);
 		/* fall through */
 	case 3:
-                if (etd->hw_version == 3)
-                        elantech_set_buttonpad_prop(psmouse);
+		if (etd->hw_version == 3)
+			elantech_set_buttonpad_prop(psmouse);
 		input_set_abs_params(dev, ABS_X, x_min, x_max, 0, 0);
 		input_set_abs_params(dev, ABS_Y, y_min, y_max, 0, 0);
 		if (etd->reports_pressure) {
@@ -1072,7 +1072,7 @@ static int elantech_set_input_params(struct psmouse *psmouse)
 			 */
 			psmouse_warn(psmouse, "couldn't query resolution data.\n");
 		}
-                elantech_set_buttonpad_prop(psmouse);
+		elantech_set_buttonpad_prop(psmouse);
 		__set_bit(BTN_TOOL_QUADTAP, dev->keybit);
 		/* For X to recognize me as touchpad. */
 		input_set_abs_params(dev, ABS_X, x_min, x_max, 0, 0);

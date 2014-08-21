@@ -825,7 +825,7 @@ static int iwl_enqueue_hcmd(struct iwl_trans *trans, struct iwl_host_cmd *cmd)
 	trace_idx = 1;
 #endif
 
-        /* map the remaining (adjusted) nocopy/dup fragments */
+	/* map the remaining (adjusted) nocopy/dup fragments */
 	for (i = 0; i < IWL_MAX_CMD_TFDS; i++) {
 		if (!cmdlen[i])
 			continue;
