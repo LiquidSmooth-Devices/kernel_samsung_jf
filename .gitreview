@@ -1,0 +1,5 @@
+[gerrit]
+host=gerrit.liquidsmooth.net
+port=29418
+project=LiquidSmooth-Devices/kernel_samsung_jf.git
+defaultbranch=kitkat
